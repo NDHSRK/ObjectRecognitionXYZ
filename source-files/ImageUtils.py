@@ -1,4 +1,5 @@
 # import the necessary packages
+from FTCRobotError import FTCRobotError
 import numpy as np
 import cv2
 
@@ -9,6 +10,35 @@ import cv2
 # ImageUtils.py
 #################################################################
 class ImageUtils:
+
+    @staticmethod
+    def create_output_file_preamble(p_image_directory, p_image_filename, p_file_date):
+        # Sanity check on the file name extension.
+        if not (p_image_filename.endswith(".png") or p_image_filename.endswith(".jpg")):
+            raise FTCRobotError("Invalid image file name")
+
+        # Strip the extension from the end of the file name and append an underscore and time stamp.
+        index = p_image_filename.rindex(".")  # highest index, exception if not found
+        filename_only = p_image_filename[:-4]
+        return p_image_directory + filename_only + "_" + p_file_date
+
+    '''
+    In the OpenCV Python API (cv2), there is no native, standalone Rect class object.
+    Instead, a "Rect" is defined implicitly as a standard Python tuple or list of four
+    integers following the format (x, y, w, h).
+    When an OpenCV function expects or returns a rectangle, it maps directly to the
+    following structure:
+    x: The x-coordinate of the top-left corner (horizontal position).
+    y: The y-coordinate of the top-left corner (vertical position).
+    w: The width of the rectangle extending to the right.
+    h: The height of the rectangle extending downward.
+    '''
+    @staticmethod
+    def pre_process_image(p_original_image, p_roi_x, p_roi_y, p_roi_width, p_roi_height):
+        # Create an *independent* Region of Interest using .copy()
+        roi = p_original_image[p_roi_y: p_roi_y + p_roi_height,
+              p_roi_x: p_roi_x + p_roi_width].copy()
+        return roi
 
     @staticmethod
     def apply_grayscale_threshold(p_grayscale_image, grayscale_threshold_low):

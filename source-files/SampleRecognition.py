@@ -69,6 +69,7 @@ class OpenCVRotatedRect:
 #################################################################
 
 class SampleRecognition:
+
     class Alliance(Enum):
         BLUE = 1
         RED = 2
@@ -85,11 +86,14 @@ class SampleRecognition:
         COUNTER_CLOCKWISE = 3
         CLOCKWISE = 4
 
-    def __init__(self, p_alliance):
+    def __init__(self, p_alliance, p_output_filename_preamble):
         self.alliance = p_alliance
+        self.output_filename_preamble = p_output_filename_preamble
         self.image_roi_height = 0.0
         self.image_roi_width = 0.0
         self.image_roi_center = (0.0, 0.0)
+
+        self.TAG = self.__class__.__name__ # for logging
 
     # The final return value from perform_recognition should
     # be a class object (SampleRecognitionReturn) that
@@ -170,10 +174,9 @@ class SampleRecognition:
         cv2.imshow("Recognized objects ", show_rects)
         cv2.waitKey(0)
 
-        ##TODO ... or port ...
-        #String fullFilename = pOutputFilenamePreamble + pFilenameSuffix + ".png";
-        #DebugImageCommon.writeImage(fullFilename, drawnRotatedRectangle);
-        #RobotLogCommon.d(TAG, "Writing " + fullFilename);
+        rects_filename = self.output_filename_preamble + "_RECT.png"
+        cv2.imwrite(rects_filename, show_rects)
+        print(self.TAG + " Writing " + rects_filename)
 
         return self.SampleRecognitionReturn(self.SampleRecognitionReturn.RecognitionStatus.SUCCESS,
                                             recognized_objects)
@@ -181,6 +184,7 @@ class SampleRecognition:
     # Assume that the parameter p_filtered_contours is a collection of OpenCV contours,
     # each with a non-zero area. Returns a collection of OpenCV rotated rectangles that
     # pass the area filters.
+    ##TODO You can use height and width to check aspect ratio.
     @staticmethod
     def enclose_and_filter_samples(p_filtered_contours, image_height, image_width, min_area, max_area):
         filtered_rects = []

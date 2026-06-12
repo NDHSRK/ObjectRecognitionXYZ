@@ -1,7 +1,9 @@
 from SampleRecognition import SampleRecognition
+from ImageUtils import ImageUtils
 import argparse
 import cv2
 import os
+from datetime import datetime
 
 def main():
     # Construct the argument parser and parse the arguments.
@@ -10,20 +12,27 @@ def main():
     ap.add_argument("--alliance", type=str)
     args = vars(ap.parse_args())
 
-    ##TODO The image directory is os.getcwd() + "\files\images\"
-    # You'll need this if you want to write output files.
-
     # load the image
-    #current_working_directory = os.getcwd()
-    image_full_path = os.getcwd() + args["image"]
+    IMAGE_SUBDIRECTORY = "\\files\\images\\" # const
+    image_directory = os.getcwd() + IMAGE_SUBDIRECTORY
+    image_filename = args["image"]
+    image_full_path = image_directory + image_filename
     src = cv2.imread(image_full_path)
     if src is None:
         print('File not found')
         return
 
-    ##TODO Currently this project uses a full image. To
-    # support an ROI you have to port code from Java.
-    # See C:\Users\lonep\OneDrive\Documents\FTC\FTC 2026 Post Season\CalculateXYZ\PortToPython.java
+    ##TODO Currently this project uses a full image.
+    # To support an ROI you need command line switches
+    # for the ROI values x origin y origin, width, height.
+    # Then you need to call ImageUtils.pre_process_image().
+
+    # For writing output image files with a timestamp in
+    # the filename.
+    # Format: YYYY-MM-DD HH:MM:SS
+    now = datetime.now()
+    formatted_timestamp = now.strftime("%Y_%m_%d_%H_%M_%S")
+    output_file_preamble = ImageUtils.create_output_file_preamble(image_directory, image_filename, formatted_timestamp)
 
     # This project has a generic name, ObjectRecognitionXYZ,
     # and is intended to be merged into the project
@@ -36,21 +45,21 @@ def main():
     alliance = args["alliance"]
     alliance_instance = SampleRecognition.Alliance[alliance]
 
-    ##TODO See error handling in
-    ## 4/3/2026 main program section of FtcIntoTheDeepLimelight - with error handling
-    # in file detect_sample_as_runPipeline.py
+    try:
+        recognition = SampleRecognition(alliance_instance.value, output_file_preamble)
+        ret_val = recognition.perform_recognition(src)
+        print(ret_val.status)
 
-    recognition = SampleRecognition(alliance_instance.value)
-    ret_val = recognition.perform_recognition(src)
-    print(ret_val.status)
-
-    if ret_val.status != SampleRecognition.SampleRecognitionReturn.RecognitionStatus.FAILURE:
-        for one_object in ret_val.recognized_objects:
-            # Print out the coordinates of each object's centerpoint
-            # and its FTC angle.
-            print("Recognized object with center x " + str(one_object.center_x) +
-            ", center y " + str(one_object.center_y) +
-            ", ftc angle " + str(one_object.ftc_angle))
+        if ret_val.status != SampleRecognition.SampleRecognitionReturn.RecognitionStatus.FAILURE:
+            for one_object in ret_val.recognized_objects:
+                # Print out the coordinates of each object's centerpoint
+                # and its FTC angle.
+                print("Recognized object with center x " + str(one_object.center_x) +
+                ", center y " + str(one_object.center_y) +
+                ", ftc angle " + str(one_object.ftc_angle))
+    except Exception as e:
+        # For debugging print out information from the exception.
+        print(repr(e))
 
 if __name__ == "__main__":
     main()
