@@ -111,7 +111,7 @@ class ImageUtils:
         return hsv_hue_low, hsv_hue_high
 
     @staticmethod
-    def filter_contours(p_thresholded, image_height, image_width):
+    def filter_contours(p_thresholded, image_width, image_height):
         contours, _ = cv2.findContours(p_thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Draw on an all-black background; drawContours requires a BGR image.

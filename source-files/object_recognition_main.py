@@ -1,9 +1,11 @@
+from SampleRecognition import ImageParameters
 from SampleRecognition import SampleRecognition
 from ImageUtils import ImageUtils
 import argparse
 import cv2
 import os
 from datetime import datetime
+
 
 def main():
     # Construct the argument parser and parse the arguments.
@@ -23,11 +25,6 @@ def main():
         print('File not found')
         return
 
-    ##TODO Currently this project uses a full image.
-    # To support an ROI you need command line switches
-    # for the ROI values x origin y origin, width, height.
-    # Then you need to call ImageUtils.pre_process_image().
-
     # For writing output image files with a timestamp in
     # the filename.
     # Format: YYYY-MM-DD HH:MM:SS
@@ -46,21 +43,42 @@ def main():
     alliance = args["alliance"]
     alliance_instance = SampleRecognition.Alliance[alliance]
 
+    # Currently this project uses a full image.
+    # To support an ROI you use a Python version of Java
+    # VisionParameters.ImageParameters, filled in with
+    # the ROI values x origin y origin, width, height.
+    # Pass an instance of the ImageParameters class to
+    # the function perform_recognition.
+    image_parameters = ImageParameters(src, 640, 480, 0, 0, 640, 480)
+
     try:
         recognition = SampleRecognition(alliance_instance.value, output_file_preamble)
-        ret_val = recognition.perform_recognition(src)
+        ret_val = recognition.perform_recognition(src, image_parameters)
         print(ret_val.status)
 
+        # When you introduce an ROI you have to ensure that
+        # the final coordinates of the recognized object are
+        # relative to the full image, not just the ROI - because
+        # CalculateXYZ needs the full-image coordinates. See enhanced
+        # logging in c++ CLOpenCVTestbed4.NineDotContours and
+        # ShapeDrawing.
         if ret_val.status != SampleRecognition.SampleRecognitionReturn.RecognitionStatus.FAILURE:
             for one_object in ret_val.recognized_objects:
                 # Print out the coordinates of each object's centerpoint
                 # and its FTC angle.
-                print("Recognized object with center x " + str(one_object.center_x) +
-                ", center y " + str(one_object.center_y) +
-                ", ftc angle " + str(one_object.ftc_angle))
+                if image_parameters.roi_x != 0 or image_parameters.roi_y != 0:
+                    print("Object location in the ROI with center at x " + str(one_object.center_x) + ", y " + str(
+                        one_object.center_y))
+
+                print("Object location in the full image with center at x " + str(
+                    one_object.center_x + image_parameters.roi_x) + ", y " +
+                      str(one_object.center_y + image_parameters.roi_y) +
+                      ", ftc angle " + str(one_object.ftc_angle))
+
     except Exception as e:
         # For debugging print out information from the exception.
         print(repr(e))
+
 
 if __name__ == "__main__":
     main()
