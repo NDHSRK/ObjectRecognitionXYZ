@@ -4,7 +4,8 @@ from ImageUtils import ImageUtils
 import argparse
 import cv2
 import os
-import sys
+import traceback
+
 from datetime import datetime
 
 
@@ -77,15 +78,18 @@ def main():
                       ", ftc angle " + str(one_object.ftc_angle))
 
     except Exception as e:
-        # For debugging print out information from the exception.
         print(repr(e))
 
-        # Get the traceback information
-        exc_type, exc_value, exc_traceback = sys.exc_info()
+        # Extracts all trace entries
+        summary = traceback.extract_tb(e.__traceback__)
 
-        # Extract the line number from the traceback
-        line_number = exc_traceback.extract_tb(exc_traceback)[-1][1]
-        print("Line number at exception " + str(line_number))
+        # Get the very last frame where the crash actually happened
+        last_frame = summary[-1]
+
+        print(f"File: {last_frame.filename}")
+        print(f"Function: {last_frame.name}")
+        print(f"Line Number: {last_frame.lineno}")
+        print(f"Code line: {last_frame.line}")
 
 if __name__ == "__main__":
     main()
